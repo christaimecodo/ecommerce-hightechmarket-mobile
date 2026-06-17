@@ -1,41 +1,62 @@
+// ============================================================
+// Profil.jsx — Écran du profil utilisateur
+// ============================================================
+// Affiche les informations de l'utilisateur connecté.
+// Si personne n'est connecté, un bouton "Se connecter" est affiché.
+// Si l'utilisateur est connecté, ses infos sont affichées avec
+// un bouton "Se déconnecter".
+//
+// Cet écran utilise UserContext pour savoir qui est connecté.
+// ============================================================
+
 import React from "react";
 import { View, Text, ScrollView, Pressable, Alert } from "react-native";
 import styles from "../styles/profil";
-import { useUser } from "../context/UserContext";// on utilise le hook du contexte
 
+import { useUser } from "../context/UserContext";
+// useUser : pour lire les infos de l'utilisateur et appeler logout()
 
 export const Profil = ({ navigation }) => {
-  const { user, logout } = useUser(); // user = null ou { id, nom, prenom, email, telephone }
 
+  // user   : infos de l'utilisateur connecté, ou null si personne n'est connecté
+  // logout : fonction qui déconnecte l'utilisateur (remet user à null)
+  const { user, logout } = useUser();
+
+  // handleLogout : demande une confirmation avant de déconnecter
   const handleLogout = () => {
     if (!user) {
-      Alert.alert("Info", "Vous n'êtes déjà pas connecté(e).");
+      // Personne n'est connecté, rien à faire
+      Alert.alert("Info", "Vous n'êtes pas connecté(e).");
       return;
     }
 
+    // Popup de confirmation avant déconnexion
     Alert.alert(
       "Déconnexion",
       "Voulez-vous vraiment vous déconnecter ?",
       [
-        { text: "Annuler", style: "cancel" },
+        { text: "Annuler", style: "cancel" }, // annule, ne fait rien
         {
           text: "Oui",
           style: "destructive",
           onPress: () => {
-            logout(); // remet user à null dans le contexte
+            logout(); // remet user à null dans UserContext
             Alert.alert("Déconnecté", "Vous avez été déconnecté(e).");
-            navigation.replace("Connexion");
+            navigation.replace("Connexion"); // redirige vers la page de connexion
           },
         },
       ]
     );
   };
 
+  // isConnected : vrai si user n'est pas null (quelqu'un est connecté)
+  // !! convertit n'importe quelle valeur en booléen (true/false)
   const isConnected = !!user;
 
   return (
     <View style={styles.page}>
-      {/* Menu juste sous le header */}
+
+      {/* Menu de navigation rapide */}
       <View style={styles.menuContainer}>
         <ScrollView
           horizontal
@@ -49,26 +70,25 @@ export const Profil = ({ navigation }) => {
           <Pressable style={styles.button} onPress={() => navigation.popToTop()}>
             <Text style={styles.buttonText}>Accueil</Text>
           </Pressable>
-          <Pressable
-            style={styles.button}
-            onPress={() => navigation.navigate("Catalogue")}
-          >
+          <Pressable style={styles.button} onPress={() => navigation.navigate("Catalogue")}>
             <Text style={styles.buttonText}>Catalogue</Text>
           </Pressable>
-          {/* Toujours pas de Connexion / Inscription / Profil ici */}
         </ScrollView>
       </View>
 
-      {/* Carte de contenu */}
+      {/* Carte principale du profil */}
       <View style={styles.conteneur}>
         <Text style={styles.titre}>Profil</Text>
 
+        {/* Affichage conditionnel selon si l'utilisateur est connecté ou non */}
         {isConnected ? (
+          // --- Utilisateur connecté ---
           <>
             <Text style={styles.sousTitre}>
               Bienvenue {user.prenom} {user.nom}
             </Text>
 
+            {/* Informations personnelles de l'utilisateur */}
             <View style={{ marginTop: 20 }}>
               <Text style={styles.sousTitre}>Vos informations :</Text>
               <Text style={{ marginTop: 10 }}>Nom : {user.nom}</Text>
@@ -77,6 +97,7 @@ export const Profil = ({ navigation }) => {
               <Text>Téléphone : {user.telephone}</Text>
             </View>
 
+            {/* Bouton de déconnexion (rouge) */}
             <Pressable
               onPress={handleLogout}
               style={[styles.toggleBtn, styles.btnDanger, { marginTop: 30 }]}
@@ -85,11 +106,13 @@ export const Profil = ({ navigation }) => {
             </Pressable>
           </>
         ) : (
+          // --- Personne n'est connecté ---
           <>
             <Text style={styles.sousTitre}>
               Vous n'êtes pas connecté(e). Connectez-vous pour voir votre profil.
             </Text>
 
+            {/* Bouton pour aller vers l'écran de connexion */}
             <Pressable
               onPress={() => navigation.replace("Connexion")}
               style={[styles.toggleBtn, styles.btnPrimary, { marginTop: 30 }]}

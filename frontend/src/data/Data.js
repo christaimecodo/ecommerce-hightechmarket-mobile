@@ -1,3 +1,19 @@
+// ============================================================
+// Data.js — Liste des produits du catalogue (données locales)
+// ============================================================
+// Ce fichier contient les produits affichés dans le catalogue.
+// Il n'y a pas de base de données ici : les produits sont codés
+// directement dans l'application (on appelle cela des "données statiques").
+//
+// Chaque produit est un objet avec 4 propriétés :
+//   - id    : identifiant unique (texte, ex: '1', '2'...)
+//   - name  : nom du produit
+//   - prix  : prix avec le symbole € (ex: '449.99€')
+//   - image : URL internet de l'image du produit
+//
+// Pour modifier les produits, il suffit de modifier ce tableau.
+// ============================================================
+
 // Liste des produits affichés dans le catalogue local (sans base de données)
 export const produits = [
   {

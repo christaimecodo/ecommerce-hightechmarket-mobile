@@ -1,84 +1,103 @@
-﻿import React, { useState,useEffect, useRef } from "react";
+// ============================================================
+// Connexion.jsx — Formulaire de connexion
+// ============================================================
+// Permet à un utilisateur déjà inscrit de se connecter.
+// Il saisit son email et mot de passe → vérification dans SQLite
+// → si correct, ses infos sont stockées dans UserContext → Profil.
+//
+// Étapes :
+//   1. Chargement : la table Users est créée si elle n'existe pas
+//   2. Saisie : l'utilisateur remplit email + mot de passe
+//   3. Validation : on vérifie le format des champs
+//   4. Vérification en base : VerifUser() cherche dans SQLite
+//   5. Succès → setUser() stocke l'utilisateur + navigation vers Profil
+//   6. Échec → message d'erreur affiché
+// ============================================================
+
+import React, { useState, useEffect, useRef } from "react";
 import styles from "../styles/connexion";
 import {
-  Alert,
-  Button,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
+  Alert, Button, KeyboardAvoidingView, Platform,
+  Pressable, ScrollView, Text, TextInput, View,
 } from "react-native";
-import { InitDB } from "../database/initdb";
-import { VerifUser } from "../database/Task";
-import { useUser } from "../context/UserContext";
+// KeyboardAvoidingView : remonte le contenu quand le clavier s'ouvre
+// Platform             : détecte si on est sur iOS ou Android
 
+import { InitDB } from "../database/initdb";
+// Crée la table Users dans SQLite si elle n'existe pas encore
+
+import { VerifUser } from "../database/Task";
+// Cherche un utilisateur par email + mot de passe dans la base
+
+import { useUser } from "../context/UserContext";
+// Pour enregistrer l'utilisateur connecté dans le contexte global
 
 export const Connexion = ({ navigation }) => {
+
+  // formData contient les valeurs saisies dans les champs
   const [formData, setFormData] = useState({ email: "", motDePasse: "" });
+
+  // formErreur stocke les messages d'erreur à afficher sous chaque champ
   const [formErreur, setFormErreur] = useState({});
 
-  // contexte utilisateur (pour garder l'utilisateur connecté)
-  const { setUser } = useUser();   // on utilise le hook, plus useContext(UserContext)
+  // setUser : pour enregistrer l'utilisateur connecté globalement
+  const { setUser } = useUser();
 
-  // Initialisation de la base au montage
+  // emailRef : permet de donner le focus au champ email au chargement
+  const emailRef = useRef(null);
+
+  // Au premier affichage : initialise la base de données SQLite
   useEffect(() => {
     const setupDB = async () => {
       try {
         await InitDB();
       } catch (error) {
-        console.error("Erreur lors de l'initialisation de la base :", error);
         Alert.alert("Erreur", "Impossible d'initialiser la base locale.");
       }
     };
     setupDB();
+  }, []); // [] = une seule exécution, au premier rendu
+
+  // Au premier affichage : place le curseur dans le champ email
+  useEffect(() => {
+    emailRef.current.focus();
   }, []);
 
-    // Ref pour le focus
-    const emailRef = useRef(null);
-  
-    // Focus au chargement
-    useEffect(() => {
-      emailRef.current.focus();
-    }, []);
-
+  // validerFormulaire : vérifie que les champs sont corrects
+  // Retourne true si tout est OK, false s'il y a des erreurs
   const validerFormulaire = () => {
     const erreurs = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // format xxx@xxx.xxx
 
-    if (!formData.email.trim()) erreurs.email = "L'email est requis";
+    if (!formData.email.trim())
+      erreurs.email = "L'email est requis";
     else if (!emailRegex.test(formData.email))
       erreurs.email = "Email invalide";
 
-    if (!formData.motDePasse) erreurs.motDePasse = "Le mot de passe est requis";
+    if (!formData.motDePasse)
+      erreurs.motDePasse = "Le mot de passe est requis";
     else if (formData.motDePasse.length < 12)
       erreurs.motDePasse = "Minimum 12 caractères";
-    else if (
-      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/.test(
-        formData.motDePasse
-      )
-    )
-      erreurs.motDePasse =
-        "Le mot de passe doit contenir au moins 12 caractères, avec au moins une majuscule, une minuscule, un chiffre et un caractère spécial";
+    else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/.test(formData.motDePasse))
+      erreurs.motDePasse = "Doit contenir majuscule, minuscule, chiffre et caractère spécial";
 
     setFormErreur(erreurs);
-    return Object.keys(erreurs).length === 0;
+    return Object.keys(erreurs).length === 0; // true = pas d'erreurs
   };
 
-  // Connexion réelle avec la BD
+  // handleSubmit : appelée au clic sur "Se connecter"
   const handleSubmit = async () => {
-    if (!validerFormulaire()) return;
+    if (!validerFormulaire()) return; // arrête si erreurs
 
     try {
       const email = formData.email.trim();
       const motDePasse = formData.motDePasse;
 
+      // Recherche dans la base SQLite
       const utilisateur = await VerifUser(email, motDePasse);
 
       if (utilisateur) {
-        // On met à jour le contexte utilisateur
+        // Utilisateur trouvé : on le sauvegarde dans le contexte global
         setUser({
           id: utilisateur.id,
           nom: utilisateur.Nom,
@@ -90,25 +109,23 @@ export const Connexion = ({ navigation }) => {
         Alert.alert(
           "Succès",
           `Bienvenue ${utilisateur.Prenom} ${utilisateur.Nom} !`,
-          [
-            {
-              text: "OK",
-              onPress: () => navigation.replace("Profil"), // ou un autre écran
-            },
-          ]
+          [{ text: "OK", onPress: () => navigation.replace("Profil") }]
         );
 
+        // Réinitialise le formulaire
         setFormData({ email: "", motDePasse: "" });
         setFormErreur({});
       } else {
+        // Aucun utilisateur trouvé avec ces identifiants
         Alert.alert("Erreur", "Email ou mot de passe incorrect.");
       }
     } catch (error) {
-      console.error("Erreur lors de la vérification :", error);
       Alert.alert("Erreur", "Une erreur est survenue pendant la connexion.");
     }
   };
 
+  // handleChange : met à jour un champ du formulaire à chaque frappe
+  // et efface l'erreur de ce champ si elle existait
   const handleChange = (champ, valeur) => {
     setFormData((prev) => ({ ...prev, [champ]: valeur }));
     if (formErreur[champ])
@@ -116,11 +133,12 @@ export const Connexion = ({ navigation }) => {
   };
 
   return (
+    // Remonte le formulaire quand le clavier s'ouvre (iOS: padding, Android: height)
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.page}
     >
-      {/* Menu juste sous le header */}
+      {/* Menu de navigation rapide */}
       <View style={styles.menuContainer}>
         <ScrollView
           horizontal
@@ -134,59 +152,45 @@ export const Connexion = ({ navigation }) => {
           <Pressable style={styles.button} onPress={() => navigation.popToTop()}>
             <Text style={styles.buttonText}>Accueil</Text>
           </Pressable>
-          <Pressable
-            style={styles.button}
-            onPress={() => navigation.navigate("Catalogue")}
-          >
+          <Pressable style={styles.button} onPress={() => navigation.navigate("Catalogue")}>
             <Text style={styles.buttonText}>Catalogue</Text>
           </Pressable>
-          {/* Pas de bouton Connexion (écran courant) */}
-          <Pressable
-            style={styles.button}
-            onPress={() => navigation.replace("Inscription")}
-          >
+          <Pressable style={styles.button} onPress={() => navigation.replace("Inscription")}>
             <Text style={styles.buttonText}>Inscription</Text>
           </Pressable>
-          <Pressable
-            style={styles.button}
-            onPress={() => navigation.replace("Profil")}
-          >
+          <Pressable style={styles.button} onPress={() => navigation.replace("Profil")}>
             <Text style={styles.buttonText}>Profil</Text>
           </Pressable>
         </ScrollView>
       </View>
 
-      {/* Carte de contenu */}
+      {/* Carte du formulaire de connexion */}
       <View style={styles.conteneur}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-        >
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+
           <View style={styles.header}>
             <Text style={styles.titre}>Connectez-vous à votre compte</Text>
-            <Text style={styles.sousTitre}>
-              Remplissez le formulaire ci-dessous
-            </Text>
+            <Text style={styles.sousTitre}>Remplissez le formulaire ci-dessous</Text>
           </View>
 
+          {/* Champ Email */}
           <View style={styles.champContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput
-              ref={emailRef}
+              ref={emailRef}                    // le curseur se place ici automatiquement
               style={styles.input}
               value={formData.email}
               onChangeText={(v) => handleChange("email", v)}
               placeholder="email@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
+              keyboardType="email-address"      // clavier adapté aux emails
+              autoCapitalize="none"             // pas de majuscule automatique
               autoComplete="email"
               textContentType="emailAddress"
             />
-            {formErreur.email ? (
-              <Text style={styles.texteErreur}>{formErreur.email}</Text>
-            ) : null}
+            {formErreur.email ? <Text style={styles.texteErreur}>{formErreur.email}</Text> : null}
           </View>
 
+          {/* Champ Mot de passe */}
           <View style={styles.champContainer}>
             <Text style={styles.label}>Mot de passe</Text>
             <TextInput
@@ -194,28 +198,21 @@ export const Connexion = ({ navigation }) => {
               value={formData.motDePasse}
               onChangeText={(v) => handleChange("motDePasse", v)}
               placeholder="********"
-              secureTextEntry
+              secureTextEntry               // masque les caractères (affiche des points)
               autoCapitalize="none"
               autoComplete="password"
               textContentType="password"
             />
-            {formErreur.motDePasse ? (
-              <Text style={styles.texteErreur}>{formErreur.motDePasse}</Text>
-            ) : null}
+            {formErreur.motDePasse ? <Text style={styles.texteErreur}>{formErreur.motDePasse}</Text> : null}
           </View>
 
+          {/* Bouton de connexion */}
           <View>
-            <Button
-              title="Se connecter"
-              color="#2C2C2C"
-              onPress={handleSubmit}
-            />
+            <Button title="Se connecter" color="#2C2C2C" onPress={handleSubmit} />
           </View>
+
         </ScrollView>
       </View>
     </KeyboardAvoidingView>
   );
 };
-
-
-
