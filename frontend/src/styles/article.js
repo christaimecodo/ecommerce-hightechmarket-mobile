@@ -1,11 +1,9 @@
 ﻿// ============================================================
-// article.js — Styles de la carte produit (Article)
-Utilisé dans le Catalogue pour afficher chaque produit avec image, nom, prix et boutons.
+// article.js — Styles visuels de cet ecran (couleurs, marges, tailles)
 // ============================================================
-// Dans React Native, les styles sont définis avec StyleSheet.create().
-// C'est l'équivalent du CSS dans une application web, mais adapté au mobile.
-// Chaque clé (page, button, titre...) est un objet de style qu'on applique
-// à un composant via : style={styles.nomDeLaCle}
+// Dans React Native, les styles remplacent le CSS du web.
+// On les definit avec StyleSheet.create({ ... })
+// On les applique sur un composant avec : style={styles.nomDeLaCle}
 // ============================================================
 
 import { StyleSheet } from 'react-native';
@@ -34,4 +32,3 @@ const styles = StyleSheet.create({
 });
 
 export default styles;
-

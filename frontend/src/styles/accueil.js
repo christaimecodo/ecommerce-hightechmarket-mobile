@@ -1,12 +1,9 @@
 ﻿// ============================================================
-// accueil.js — Styles de la page d'accueil
-Couleurs, tailles et espacements de tous les éléments de l'écran Accueil.
-Chaque propriété StyleSheet correspond à un élément visuel dans Accueil.jsx.
+// accueil.js — Styles visuels de cet ecran (couleurs, marges, tailles)
 // ============================================================
-// Dans React Native, les styles sont définis avec StyleSheet.create().
-// C'est l'équivalent du CSS dans une application web, mais adapté au mobile.
-// Chaque clé (page, button, titre...) est un objet de style qu'on applique
-// à un composant via : style={styles.nomDeLaCle}
+// Dans React Native, les styles remplacent le CSS du web.
+// On les definit avec StyleSheet.create({ ... })
+// On les applique sur un composant avec : style={styles.nomDeLaCle}
 // ============================================================
 
 import { StyleSheet } from "react-native";
